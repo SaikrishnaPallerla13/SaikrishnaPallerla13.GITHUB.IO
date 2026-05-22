@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grant Finder (Puter AI Engine)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #1a1a18; --paper: #f7f5f0; --accent: #2d6a4f; --accent-light: #d8f3dc;
+      --muted: #6b6b60; --border: rgba(26,26,24,0.12); --card-bg: #ffffff;
+      --warn: #b5451b; --warn-light: #fef0eb;
+    }
+    body { background: var(--paper); font-family: 'DM Sans', sans-serif; color: var(--ink); }
+    .shell { max-width: 680px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+    .masthead { margin-bottom: 2rem; }
+    .masthead h1 { font-family: 'DM Serif Display', serif; font-size: 28px; font-weight: 400; line-height: 1.2; margin-bottom: 4px; }
+    .masthead h1 em { font-style: italic; color: var(--accent); }
+    .masthead p { font-size: 13.5px; color: var(--muted); }
+    .form-section { background: var(--card-bg); border: 0.5px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .form-row { margin-bottom: 1.125rem; }
+    .form-row:last-child { margin-bottom: 0; }
+    .form-row label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .form-row input, .form-row select, .form-row textarea {
+      width: 100%; padding: 10px 12px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      border: 0.5px solid var(--border); border-radius: 8px; background: var(--paper); color: var(--ink); outline: none; transition: border-color 0.15s;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent); }
+    .form-row textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { font-size: 12.5px; padding: 5px 12px; border-radius: 999px; border: 0.5px solid var(--border); background: var(--paper); color: var(--muted); cursor: pointer; user-select: none; transition: all 0.12s; font-family: 'DM Sans', sans-serif; }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.on { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 500; }
+    .state-wrap { position: relative; }
+    .state-wrap select { appearance: none; padding-right: 32px; }
+    .state-wrap::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--muted); pointer-events: none; }
+    .scope-toggle { display: flex; border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px; width: fit-content; }
+    .scope-btn { padding: 6px 14px; font-size: 12.5px; font-family: 'DM Sans', sans-serif; border: none; background: var(--paper); color: var(--muted); cursor: pointer; transition: all 0.12s; }
+    .scope-btn.on { background: var(--accent); color: #fff; font-weight: 500; }
+    .scope-btn:not(:last-child) { border-right: 0.5px solid var(--border); }
+    .run-btn { width: 100%; padding: 13px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .run-btn:hover { opacity: 0.9; }
+    .run-btn:active { transform: scale(0.99); }
+    .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status-bar { font-size: 13px; color: var(--muted); text-align: center; padding: 12px; display: none; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -3px; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .results { display: none; margin-top: 2rem; }
+    .results-header { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+    .grant-card { background: var(--card-bg); border: 0.5px solid var(--border); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+    .grant-head { padding: 1.125rem 1.25rem 0.75rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .grant-name { font-family: 'DM Serif Display', serif; font-size: 17px; font-weight: 400; line-height: 1.3; }
+    .grant-funder { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .deadline-badge { font-size: 11.5px; font-weight: 500; padding: 4px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+    .deadline-ok { background: var(--accent-light); color: var(--accent); }
+    .grant-body { padding: 0 1.25rem 1.25rem; }
+    .grant-desc { font-size: 13.5px; color: var(--muted); line-height: 1.6; margin-bottom: 1rem; border-top: 0.5px solid var(--border); padding-top: 0.875rem; }
+    .checklist-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-bottom: 8px; }
+    .checklist { list-style: none; }
+    .checklist li { font-size: 13px; color: var(--ink); line-height: 1.55; padding: 5px 0 5px 24px; position: relative; border-bottom: 0.5px solid var(--border); }
+    .checklist li:last-child { border-bottom: none; }
+    .checklist li::before { content: ''; position: absolute; left: 4px; top: 11px; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid var(--accent); background: var(--accent-light); }
+    .amount-row { display: flex; gap: 10px; margin-bottom: 0.875rem; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+    .amount-pill { font-size: 12px; background: var(--paper); border: 0.5px solid var(--border); border-radius: 6px; padding: 4px 10px; }
+    .amount-pill span { color: var(--muted); margin-right: 4px; }
+    .grant-link { font-size: 13px; color: var(--accent); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+    .grant-link:hover { text-decoration: underline; }
+    .error-box { background: var(--warn-light); border: 0.5px solid #f4c0a0; border-radius: 8px; padding: 12px 14px; font-size: 13.5px; color: var(--warn); margin-top: 12px; display: none; }
+  </style>
+
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+
+<div class="shell">
+  <div class="masthead">
+    <h1>Grant <em>Finder</em></h1>
+    <p>Describe your nonprofit — utilizing runtime cloud parameters via Puter.</p>
+  </div>
+
+  <div class="form-section">
+    <div class="form-row">
+      <label>Nonprofit name</label>
+      <input type="text" id="org-name" placeholder="e.g. StrideForSmiles" />
+    </div>
+    <div class="form-row">
+      <label>Mission / focus area</label>
+      <textarea id="mission" placeholder="e.g. Youth physical activity and wellness programs in underserved communities"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Population served</label>
+      <div class="chip-group" id="pop-chips">
+        <div class="chip" data-val="K–12 youth">K–12 youth</div>
+        <div class="chip" data-val="college students">College students</div>
+        <div class="chip" data-val="seniors">Seniors 65+</div>
+        <div class="chip" data-val="low-income families">Low-income families</div>
+        <div class="chip" data-val="people with disabilities">People w/ disabilities</div>
+        <div class="chip" data-val="veterans">Veterans</div>
+        <div class="chip" data-val="arts">Arts & Culture</div>
+        <div class="chip" data-val="women & girls">Women & girls</div>
+        <div class="chip" data-val="health initiatives">Health & Medical</div>
+        <div class="chip" data-val="rural communities">Rural communities</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Grant scope</label>
+      <div class="scope-toggle">
+        <button class="scope-btn on" id="scope-local" onclick="setScope('local')">Local / state</button>
+        <button class="scope-btn" id="scope-national" onclick="setScope('national')">National</button>
+        <button class="scope-btn" id="scope-both" onclick="setScope('both')">Both</button>
+      </div>
+      <div id="state-row">
+        <div class="state-wrap">
+          <select id="state-select">
+            <option value="">— Select state —</option>
+            <option>Alabama</option><option>Alaska</option><option>Arizona</option>
+            <option>California</option><option>Colorado</option><option>Florida</option>
+            <option>Georgia</option><option>Illinois</option><option>Massachusetts</option>
+            <option>New York</option><option>North Carolina</option><option>Ohio</option>
+            <option>Pennsylvania</option><option>Texas" selected>Texas</option><option>Washington</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="form-row">
+        <label>Annual budget</label>
+        <select id="budget">
+          <option value="under $50k">Under $50k</option>
+          <option value="$50k–$100k">$50k–$100k</option>
+          <option value="$100k–$500k">$100k–$500k</option>
+          <option value="over $500k">Over $500k</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>501(c)(3) status</label>
+        <select id="status">
+          <option value="yes">Yes, registered 501(c)(3)</option>
+          <option value="no">In progress / Fiscal Sponsor</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button class="run-btn" id="run-btn" onclick="executePuterAIWorkflow()">Find live grants</button>
+  <div class="status-bar" id="status-bar"><span class="spinner"></span> Performing live internet grant scanning...</div>
+  <div class="error-box" id="error-box"></div>
+
+  <div class="results" id="results">
+    <p class="results-header" id="results-header"></p>
+    <div id="cards-container"></div>
+  </div>
+</div>
+
+<script>
+let currentScope = 'local';
+
+function setScope(val) {
+  currentScope = val;
+  ['local','national','both'].forEach(s => {
+    const el = document.getElementById('scope-'+s);
+    if(el) el.classList.toggle('on', s === val);
+  });
+  document.getElementById('state-row').style.display = (val === 'national') ? 'none' : 'block';
+}
+
+document.querySelectorAll('#pop-chips .chip').forEach(chip => {
+  chip.addEventListener('click', () => chip.classList.toggle('on'));
+});
+
+function getActivePops() {
+  return [...document.querySelectorAll('#pop-chips .chip.on')].map(c => c.dataset.val);
+}
+
+async function executePuterAIWorkflow() {
+  const mission = document.getElementById('mission').value.trim();
+  const orgName = document.getElementById('org-name').value.trim() || 'your organization';
+  const stateSelect = document.getElementById('state-select');
+  const targetState = currentScope !== 'national' ? stateSelect.value : '';
+  const chosenPops = getActivePops();
+
+  if (!mission) {
+    const err = document.getElementById('error-box');
+    err.textContent = "Please provide focus keywords or a mission baseline to search.";
+    err.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('error-box').style.display = 'none';
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('status-bar').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+
+  // Construct structured data parsing prompt for Puter's keyless AI instance
+  const executionPrompt = `
+    Find 3 real, active grant funding opportunities matching these exact parameters:
+    - Focus Mission: "${mission}"
+    - Targeted Demographics: [${chosenPops.join(', ')}]
+    - Regional Target Footprint: "${targetState || 'National scope'}"
+    
+    Use your live web search tool to find actual open funding pages or portals. 
+    Return the response strictly as a JSON array of objects. Do not include markdown code block formatting or wrapping text. 
+    Each object must have exactly these keys:
+    "name": (Name of grant program),
+    "funder": (Name of foundation/agency),
+    "url": (Direct operational URL linking to the grant page),
+    "description": (Brief summary of purpose),
+    "checklist": (Array of 3 eligibility parameters based on their guidelines)
+  `;
+
+  try {
+    // Correct Puter call syntax leveraging systemic function capabilities
+    const aiResponse = await puter.ai.chat(executionPrompt, {
+      model: 'openai/gpt-5.2-chat',
+      tools: [{ type: 'web_search' }]
+    });
+    
+    let cleanTextResult = typeof aiResponse === 'object' ? aiResponse.message?.content : aiResponse;
+    if (!cleanTextResult) throw new Error("Empty index matrix return.");
+
+    // Strip out markdown string boundaries if any exist
+    cleanTextResult = cleanTextResult.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    const parsedGrants = JSON.parse(cleanTextResult);
+    if (!Array.isArray(parsedGrants)) throw new Error("Structured return payload format error.");
+
+    renderDynamicCards(parsedGrants, orgName);
+
+  } catch (e) {
+    const err = document.getElementById('error-box');
+    err.textContent = "AI Integration Index Failure: " + e.message;
+    err.style.display = 'block';
+  } finally {
+    document.getElementById('run-btn').disabled = false;
+    document.getElementById('status-bar').style.display = 'none';
+  }
+}
+
+function renderDynamicCards(items, nameInput) {
+  const container = document.getElementById('cards-container');
+  document.getElementById('results-header').textContent = `${items.length} live structural grant recommendations compiled for ${nameInput}`;
+  container.innerHTML = '';
+
+  items.forEach((item, index) => {
+    let directUrl = item.url || "#";
+    let targetHost = "External Portal";
+    try {
+      if(directUrl.startsWith("http")) {
+        targetHost = new URL(directUrl).hostname.replace('www.', '');
+      }
+    } catch(err) {}
+
+    const card = document.createElement('div');
+    card.className = 'grant-card';
+    card.innerHTML = `
+      <div class="grant-head">
+        <div>
+          <div class="grant-name">${item.name || "Funding Allocation Initiative"}</div>
+          <div class="grant-funder">Funder: ${item.funder || "Undisclosed Foundation/Agency"}</div>
+        </div>
+        <span class="deadline-badge deadline-ok">Active Opportunity</span>
+      </div>
+      <div class="grant-body">
+        <div class="amount-row">
+          <span class="amount-pill"><span>Match Index</span>#${index + 1}</span>
+          <a class="grant-link" href="${directUrl}" target="_blank">Open Official Source ↗</a>
+        </div>
+        <div class="grant-desc">${item.description || "Review source application structures directly to process baseline evaluation steps."}</div>
+        <div class="checklist-label">Live Verification Checklist</div>
+        <ul class="checklist">
+          ${(item.checklist || ["Verify organization parameters", "Confirm local regional parameters", "Review operational budgets"]).map(li => `<li>${li}</li>`).join('')}
+        </ul>
+      </div>`;
+    container.appendChild(card);
+  });
+
+  document.getElementById('results').style.display = 'block';
+}
+</script>
+</body>
+</html>
